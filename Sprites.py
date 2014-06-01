@@ -10,6 +10,7 @@ class Sprites:
         self._cached_stats = {}
         self.font = pygame.font.SysFont(None, 20)
         self._init_card_sprites(card_set)
+        self._init_other_sprites()
 
     def __getitem__(self, name):
         return self.sprites[name]
@@ -29,14 +30,8 @@ class Sprites:
         my = self.dimensions['STATS_HEIGHT']
         base = pygame.Surface((mx, my))
         base.fill((210,210,210))
-        pygame.draw.polygon(base,
-            (170,170,170),
-            [(0,0), (0,my), (3, my-3), (3,3), (mx - 3, 3), (mx, 0)],
-            0)
-        pygame.draw.polygon(base,
-            (240,240,240),
-            [(0,my), (3,my-3), (mx-3, my-3),(mx-3,3), (mx, 0), (mx, my)],
-            0)
+        self._render_topleft_corner(base, (170,170,170), mx, my)
+        self._render_bottomright_corner(base, (240,240,240), mx, my)
 
         #TODO: colors and overall scores
         text = self.font.render(values['player_name'], 1, (0,0,0))
@@ -75,7 +70,7 @@ class Sprites:
             self.sprites["card_e_" + card[Cards.C_NAME]] = self._create_card(card, True)
             self.sprites["card_d_" + card[Cards.C_NAME]] = self._create_card(card, False)
         self.sprites["card_blind"] = self._create_blind_card()
-        
+
     def _create_blind_card(self):
         return self._create_blank_card((30,30,90))
 
@@ -149,5 +144,34 @@ class Sprites:
         card.fill(fillColor)
         pygame.draw.rect(card, (0,0,0), pygame.Rect(0,0,self.dimensions['CARD_WIDTH'],self.dimensions['CARD_HEIGHT']), 1)
         return card
+
+    def _init_other_sprites(self):
+        # TODO: put some icon on the dispose button
+        mx = self.dimensions['DISCARD_WIDTH']
+        my = self.dimensions['DISCARD_HEIGHT']
+        dispose = pygame.Surface((mx, my))
+        dispose.fill((180,180,180))
+        self._render_topleft_corner(dispose, (140,140,140), mx, my)
+        self._render_bottomright_corner(dispose, (240,240,240), mx, my)
+        self.sprites['dispose_on'] = dispose
+
+        dispose = pygame.Surface((mx, my))
+        dispose.fill((210,210,210))
+        self._render_topleft_corner(dispose, (240,240,240), mx, my)
+        self._render_bottomright_corner(dispose, (140,140,140), mx, my)
+        self.sprites['dispose_off'] = dispose
+
+    def _render_topleft_corner(self, surface, color, mx, my):
+        pygame.draw.polygon(surface,
+            color,
+            [(0,0), (0,my), (3, my-3), (3,3), (mx - 3, 3), (mx, 0)],
+            0)
+
+    def _render_bottomright_corner(self, surface, color, mx, my):
+        pygame.draw.polygon(surface,
+            color,
+            [(0,my), (3,my-3), (mx-3, my-3),(mx-3,3), (mx, 0), (mx, my)],
+            0)
+
 
 

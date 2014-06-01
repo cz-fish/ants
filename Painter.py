@@ -11,6 +11,15 @@ from Sprites import Sprites
 
 # TODO: perhaps don't draw anything at all if the scene is completely the same as previous frame
 
+class UICard:
+    def __init__(self, x, y, name, enabled, blind, zorder):
+        self.x = x
+        self.y = y
+        self.name = name
+        self.enabled = enabled
+        self.blind = blind
+        self.zorder = zorder
+
 class Painter:
     def __init__(self, surface, game):
         self.surface = surface
@@ -19,28 +28,26 @@ class Painter:
             'STATS_WIDTH': 168,
             'STATS_HEIGHT': 250,
             'CARD_WIDTH': 100,
-            'CARD_HEIGHT': 150
+            'CARD_HEIGHT': 150,
+            'DISCARD_WIDTH': 40,
+            'DISCARD_HEIGHT': 40
         }
 
-        self.font = pygame.font.SysFont(None, 20)
-        
         self.bmp = Bitmaps()
         self.sprites = Sprites(self.bmp, self.game.cards, self.dimensions)
+        self.cards = {}
+        self.deck_position = ((self.surface.get_width() - self.dimensions['CARD_WIDTH']) / 2, 0)
+        self.discard_rect = [self.surface.get_width() / 2 + 120, 30, self.dimensions['DISCARD_WIDTH'], self.dimensions['DISCARD_HEIGHT']]
 
 
-    def drawScreen(self, players):
+    def drawScreen(self, players, disposing):
         """Draws the entire screen"""
         self.drawBackground()
         self.drawStats(players[0], True)
         self.drawStats(players[1], False)
         self.drawAnthills(players[0].castle, players[0].wall, players[1].castle, players[1].wall)
-        #FIXME
-        hand = players[0].cards
-        enabled = players[0].playable
-
-        blind = False
-
-        self.drawCards([(hand[i], enabled[i]) for i in range(len(hand))], blind)
+        self.drawDisposeButton(disposing)
+        self.drawCards()
 
     def drawBackground(self):
         """Draws the window background and controls (dispose button)"""
@@ -72,26 +79,17 @@ class Painter:
         stats = self.sprites.get_player_stats_sprite(['right','left'][left], values)
         self.surface.blit(stats, (x, 0))
 
-    def drawCards(self, hand, blind):
-        """Draws all cards on the screen - i.e. player's hand (blind in case it's AI move) and the deck card
-           hand - list of cards on player's hand; may be empty if blind is set
-           blind - if true, the blind hand will be drawn (i.e. only backs of the cards, so that the player doesn't see AI player's hand)"""
-        #self.drawSingleCard(
-        #    ((self.surface.get_width()-self.CARD_WIDTH)/2, 0),
-        #    deck[0], deck[1])
-
-        for i in range(8):
-            lefttop = (i * self.dimensions['CARD_WIDTH'], self.surface.get_height()-self.dimensions['CARD_HEIGHT'])
-            card = hand[i][0]
-            enabled = hand[i][1]
-            if blind:
+    def drawCards(self):
+        """Draws all cards on the screen - i.e. player's hand (blind in case it's AI move) and the deck card"""
+        for card in sorted(self.cards.values(), key = lambda c: c.zorder):
+            if card.blind:
                 sprite = self.sprites["card_blind"]
             else:
-                if enabled:
-                    sprite = self.sprites["card_e_" + card[Cards.C_NAME]]
+                if card.enabled:
+                    sprite = self.sprites["card_e_" + card.name]
                 else:
-                    sprite = self.sprites["card_d_" + card[Cards.C_NAME]]
-            self.surface.blit(sprite, lefttop)
+                    sprite = self.sprites["card_d_" + card.name]
+            self.surface.blit(sprite, (card.x, card.y))
 
     def drawAnthills(self, castleP1, wallP1, castleP2, wallP2):
         """Draws both castles and walls
@@ -99,6 +97,30 @@ class Painter:
            wallP1 - height of P1's wall
            castleP2 - height of P2's castle
            wallP2 - height of P2's wall"""
+        #TODO
         pass
 
+    def drawDisposeButton(self, disposing):
+        sprite = self.sprites["dispose_" + ["off", "on"][disposing]]
+        self.surface.blit(sprite, (self.discard_rect[0], self.discard_rect[1]))
+
+    def updateDisplayedCards(self, player):
+        blind = not player.isHuman()
+        i = 0
+        for card in zip(player.cards, player.playable):
+            self.cards[i] = UICard(
+                x = i * self.dimensions['CARD_WIDTH'],
+                y = self.surface.get_height()-self.dimensions['CARD_HEIGHT'],
+                name = card[0][Cards.C_NAME],
+                enabled = card[1],
+                blind = blind,
+                zorder = 1
+            )
+            i += 1
+
+    def card_rect(self, card_no):
+        if card_no not in self.cards:
+            return [-1,-1,0,0]
+        return [self.cards[card_no].x, self.cards[card_no].y, self.dimensions['CARD_WIDTH'], self.dimensions['CARD_HEIGHT']]
+        
 

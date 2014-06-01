@@ -3,16 +3,72 @@ import pygame.image
 import Cards
 
 class Sprites:
-    def __init__(self, bitmaps, card_set, card_width, card_height):
+    def __init__(self, bitmaps, card_set, dimensions):
         self.sprites = {}
         self.bmp = bitmaps
-        self.card_width = card_width
-        self.card_height = card_height
+        self.dimensions = dimensions
+        self._cached_stats = {}
         self.font = pygame.font.SysFont(None, 20)
         self._init_card_sprites(card_set)
 
     def __getitem__(self, name):
         return self.sprites[name]
+
+    def get_player_stats_sprite(self, sprite_name, values):
+        key = "cached_stats_" + sprite_name
+        if sprite_name in self._cached_stats and self._cached_stats[sprite_name] == values:
+            return self.sprites[key]
+
+        sprite = self._render_stats_sprite(values)
+        self.sprites[key] = sprite
+        self._cached_stats[sprite_name] = values
+        return sprite
+
+    def _render_stats_sprite(self, values):
+        mx = self.dimensions['STATS_WIDTH']
+        my = self.dimensions['STATS_HEIGHT']
+        base = pygame.Surface((mx, my))
+        base.fill((210,210,210))
+        pygame.draw.polygon(base,
+            (170,170,170),
+            [(0,0), (0,my), (3, my-3), (3,3), (mx - 3, 3), (mx, 0)],
+            0)
+        pygame.draw.polygon(base,
+            (240,240,240),
+            [(0,my), (3,my-3), (mx-3, my-3),(mx-3,3), (mx, 0), (mx, my)],
+            0)
+
+        #TODO: colors and overall scores
+        text = self.font.render(values['player_name'], 1, (0,0,0))
+        base.blit(text, (10, 5))
+        
+        base.blit(self.bmp['stats_castle'], (7, 20))
+        base.blit(self.bmp['stats_wall'], (85, 20))
+        base.blit(self.bmp['rsrc_architect'], (7, 83))
+        base.blit(self.bmp['rsrc_soldier'], (7, 136))
+        base.blit(self.bmp['rsrc_mage'], (7, 189))
+        base.blit(self.bmp['rsrc_brick'], (85, 83))
+        base.blit(self.bmp['rsrc_arm'], (85, 136))
+        base.blit(self.bmp['rsrc_crystal'], (85, 189))
+
+        text = self.font.render(str(values['castle']), 1, (0,0,0))
+        base.blit(text, (58, 40))
+        text = self.font.render(str(values['wall']), 1, (0,0,0))
+        base.blit(text, (136, 40))
+        text = self.font.render(str(values['architects']), 1, (0,0,0))
+        base.blit(text, (58, 100))
+        text = self.font.render(str(values['soldiers']), 1, (0,0,0))
+        base.blit(text, (58, 150))
+        text = self.font.render(str(values['mages']), 1, (0,0,0))
+        base.blit(text, (58, 200))
+        text = self.font.render(str(values['bricks']), 1, (0,0,0))
+        base.blit(text, (136, 100))
+        text = self.font.render(str(values['arms']), 1, (0,0,0))
+        base.blit(text, (136, 150))
+        text = self.font.render(str(values['crystals']), 1, (0,0,0))
+        base.blit(text, (136, 200))
+        return base
+
 
     def _init_card_sprites(self, card_set):
         for card in card_set:
@@ -37,7 +93,7 @@ class Sprites:
                 card.blit(text, (left + 24, 22))
                 left += 35
 
-        pygame.draw.line(card, (0,0,0), (5, 46), (self.card_width-5, 46))
+        pygame.draw.line(card, (0,0,0), (5, 46), (self.dimensions['CARD_WIDTH']-5, 46))
 
         top = 50
         # TODO: special case: curse
@@ -71,7 +127,7 @@ class Sprites:
         # TODO: castle/wall and attack in a similar fashion
 
         if not enabled:
-            overlay = pygame.Surface((self.card_width, self.card_height))
+            overlay = pygame.Surface((self.dimensions['CARD_WIDTH'], self.dimensions['CARD_HEIGHT']))
             overlay.fill((25,25,25))
             pygame.draw.ellipse(overlay, (0,0,0), (-120,-100,240,200), 0)
             #card.blit(overlay, (0,0))
@@ -80,9 +136,9 @@ class Sprites:
         return card
 
     def _create_blank_card(self, fillColor):
-        card = pygame.Surface((self.card_width, self.card_height))
+        card = pygame.Surface((self.dimensions['CARD_WIDTH'], self.dimensions['CARD_HEIGHT']))
         card.fill(fillColor)
-        pygame.draw.rect(card, (0,0,0), pygame.Rect(0,0,self.card_width,self.card_height), 1)
+        pygame.draw.rect(card, (0,0,0), pygame.Rect(0,0,self.dimensions['CARD_WIDTH'],self.dimensions['CARD_HEIGHT']), 1)
         return card
 
 

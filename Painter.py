@@ -15,15 +15,17 @@ class Painter:
     def __init__(self, surface, game):
         self.surface = surface
         self.game = game
-        self.STATS_WIDTH = 168
-        self.STATS_HEIGHT = 250
-        self.CARD_WIDTH = 100
-        self.CARD_HEIGHT = 150
+        self.dimensions = {
+            'STATS_WIDTH': 168,
+            'STATS_HEIGHT': 250,
+            'CARD_WIDTH': 100,
+            'CARD_HEIGHT': 150
+        }
 
         self.font = pygame.font.SysFont(None, 20)
         
         self.bmp = Bitmaps()
-        self.sprites = Sprites(self.bmp, self.game.cards, self.CARD_WIDTH, self.CARD_HEIGHT)
+        self.sprites = Sprites(self.bmp, self.game.cards, self.dimensions)
 
 
     def drawScreen(self, players):
@@ -48,54 +50,26 @@ class Painter:
 
     def drawStats(self, player, left):
         """Draws game stats/info for one player
-           stats - player stats/info
+           player - player stats/info
            left - align to the left of the screen (True) or to the right (False)"""
-        mx = self.STATS_WIDTH
-        my = self.STATS_HEIGHT
+        mx = self.dimensions['STATS_WIDTH']
+        my = self.dimensions['STATS_HEIGHT']
         x = [self.surface.get_width() - mx, 0][left]
-        base = pygame.Surface((mx, my))
-        base.fill((210,210,210))
-        pygame.draw.polygon(base,
-            (170,170,170),
-            [(0,0), (0,my), (3, my-3), (3,3), (mx - 3, 3), (mx, 0)],
-            0)
-        pygame.draw.polygon(base,
-            (240,240,240),
-            [(0,my), (3,my-3), (mx-3, my-3),(mx-3,3), (mx, 0), (mx, my)],
-            0)
 
-        #FIXME: player names, colors and overall scores
-        name = 'Player ' + ['2', '1'][left]
-        text = self.font.render(name, 1, (0,0,0))
-        base.blit(text, (10, 5))
-        
-        base.blit(self.bmp['stats_castle'], (7, 20))
-        base.blit(self.bmp['stats_wall'], (85, 20))
-        base.blit(self.bmp['rsrc_architect'], (7, 83))
-        base.blit(self.bmp['rsrc_soldier'], (7, 136))
-        base.blit(self.bmp['rsrc_mage'], (7, 189))
-        base.blit(self.bmp['rsrc_brick'], (85, 83))
-        base.blit(self.bmp['rsrc_arm'], (85, 136))
-        base.blit(self.bmp['rsrc_crystal'], (85, 189))
+        values = {
+            'player_name': 'Player ' + ['2', '1'][left],
+            'castle': player.castle,
+            'wall': player.wall,
+            'architects': player.architects,
+            'soldiers': player.soldiers,
+            'mages': player.mages,
+            'bricks': player.bricks,
+            'arms': player.arms,
+            'crystals': player.crystals
+        }
 
-        text = self.font.render(str(player.castle), 1, (0,0,0))
-        base.blit(text, (58, 40))
-        text = self.font.render(str(player.wall), 1, (0,0,0))
-        base.blit(text, (136, 40))
-        text = self.font.render(str(player.architects), 1, (0,0,0))
-        base.blit(text, (58, 100))
-        text = self.font.render(str(player.soldiers), 1, (0,0,0))
-        base.blit(text, (58, 150))
-        text = self.font.render(str(player.mages), 1, (0,0,0))
-        base.blit(text, (58, 200))
-        text = self.font.render(str(player.bricks), 1, (0,0,0))
-        base.blit(text, (136, 100))
-        text = self.font.render(str(player.arms), 1, (0,0,0))
-        base.blit(text, (136, 150))
-        text = self.font.render(str(player.crystals), 1, (0,0,0))
-        base.blit(text, (136, 200))
-
-        self.surface.blit(base, (x, 0))
+        stats = self.sprites.get_player_stats_sprite(['right','left'][left], values)
+        self.surface.blit(stats, (x, 0))
 
     def drawCards(self, hand, blind):
         """Draws all cards on the screen - i.e. player's hand (blind in case it's AI move) and the deck card
@@ -106,7 +80,7 @@ class Painter:
         #    deck[0], deck[1])
 
         for i in range(8):
-            lefttop = (i * self.CARD_WIDTH, self.surface.get_height()-self.CARD_HEIGHT)
+            lefttop = (i * self.dimensions['CARD_WIDTH'], self.surface.get_height()-self.dimensions['CARD_HEIGHT'])
             card = hand[i][0]
             enabled = hand[i][1]
             if blind:

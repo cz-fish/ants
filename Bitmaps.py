@@ -15,7 +15,7 @@ class Bitmaps:
             self._bmp['action_' + v] = pygame.image.load(os.path.join('data', 'action_' + v + ext))
         for v in ['castle', 'wall']:
             self._bmp['stats_' + v] = pygame.image.load(os.path.join('data', 'stats_' + v + ext))
-        for v in ['castle', 'wall', 'transfer']:
+        for v in ['castle', 'wall', 'transfer', 'curse', 'castle_attack', 'wall_attack', 'attack']:
             self._bmp['action_' + v + '_sm'] = pygame.image.load(os.path.join('data', 'action_' + v + '_sm' + ext))
 
     def __getitem__(self, name):

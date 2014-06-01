@@ -37,6 +37,7 @@ class Painter:
         #FIXME
         hand = players[0].cards
         enabled = players[0].playable
+
         blind = False
 
         self.drawCards([(hand[i], enabled[i]) for i in range(len(hand))], blind)

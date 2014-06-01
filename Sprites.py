@@ -96,41 +96,50 @@ class Sprites:
         pygame.draw.line(card, (0,0,0), (5, 46), (self.dimensions['CARD_WIDTH']-5, 46))
 
         top = 50
-        # TODO: special case: curse
+        if cardSpec[Cards.C_NAME] == 'curse':
+            # special case: curse
+            card.blit(self.bmp['action_curse_sm'], (5, top))
+            text = self.font.render(str(cardSpec[Cards.C_LOSE][0]), 1, (0,0,0))
+            card.blit(text, (29, top + 4))
+        else:
+            for i in [0, 1, 2, 3, 4, 5]:
+                left = 5
+                if cardSpec[Cards.C_GAIN][i] != 0 or cardSpec[Cards.C_LOSE][i] != 0:
+                    card.blit(self.bmp['rsrc_' + ['brick', 'arm', 'crystal', 'architect', 'soldier', 'mage'][i] + '_sm'], (left, top))
+                    if cardSpec[Cards.C_GAIN][i] != 0 and cardSpec[Cards.C_LOSE][i] != 0:
+                        # this is a resource transfer
+                        text = self.font.render(str(-cardSpec[Cards.C_LOSE][i]), 1, (0,0,0))
+                        card.blit(text, (left + 24, top + 4))
+                        left += 35
+                        card.blit(self.bmp['action_transfer_sm'], (left, top))
+                        text = self.font.render('+' + str(cardSpec[Cards.C_GAIN][i]), 1, (0,0,0))
+                        card.blit(text, (left + 24, top + 4))
+                        left += 35
+                    elif cardSpec[Cards.C_GAIN][i] != 0:
+                        # plain positive effect
+                        text = self.font.render('+' + str(cardSpec[Cards.C_GAIN][i]), 1, (0,0,0))
+                        card.blit(text, (left + 24, top + 4))
+                        left += 35
+                    else:
+                        # plain negative effect
+                        text = self.font.render(str(-cardSpec[Cards.C_LOSE][i]), 1, (0,0,0))
+                        card.blit(text, (left + 24, top + 4))
+                        left += 35
+                    top += 30
 
-        for i in [0, 1, 2, 3, 4, 5]:
-            left = 5
-            # FIXME: review the adding of '+' signs. Make sure that we never generate '+-'
-            if cardSpec[Cards.C_GAIN][i] != 0 or cardSpec[Cards.C_LOSE][i] != 0:
-                card.blit(self.bmp['rsrc_' + ['brick', 'arm', 'crystal', 'architect', 'soldier', 'mage'][i] + '_sm'], (left, top))
-                if cardSpec[Cards.C_GAIN][i] != 0 and cardSpec[Cards.C_LOSE][i] != 0:
-                    # this is a resource transfer
-                    text = self.font.render(str(-cardSpec[Cards.C_LOSE][i]), 1, (0,0,0))
+            actions = cardSpec[Cards.C_BUILD] + cardSpec[Cards.C_DESTROY]
+            for i in range(5):
+                left = 5
+                if actions[i] != 0:
+                    card.blit(self.bmp['action_' + ['castle', 'wall', 'attack', 'castle_attack', 'wall_attack'][i] + '_sm'], (left, top))
+                    text = self.font.render(str(actions[i]), 1, (0,0,0))
                     card.blit(text, (left + 24, top + 4))
-                    left += 35
-                    card.blit(self.bmp['action_transfer_sm'], (left, top))
-                    text = self.font.render('+' + str(cardSpec[Cards.C_GAIN][i]), 1, (0,0,0))
-                    card.blit(text, (left + 24, top + 4))
-                    left += 35
-                elif cardSpec[Cards.C_GAIN][i] != 0:
-                    # plain positive effect
-                    text = self.font.render('+' + str(cardSpec[Cards.C_GAIN][i]), 1, (0,0,0))
-                    card.blit(text, (left + 24, top + 4))
-                    left += 35
-                else:
-                    # plain negative effect
-                    text = self.font.render(str(-cardSpec[Cards.C_LOSE][i]), 1, (0,0,0))
-                    card.blit(text, (left + 24, top + 4))
-                    left += 35
-                top += 30
-
-        # TODO: castle/wall and attack in a similar fashion
+                    top += 30
 
         if not enabled:
             overlay = pygame.Surface((self.dimensions['CARD_WIDTH'], self.dimensions['CARD_HEIGHT']))
             overlay.fill((25,25,25))
             pygame.draw.ellipse(overlay, (0,0,0), (-120,-100,240,200), 0)
-            #card.blit(overlay, (0,0))
             card.blit(overlay, (0,0), special_flags = pygame.BLEND_SUB)
 
         return card

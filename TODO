@@ -1,0 +1,5 @@
+* render cards to memory in advance
+* in drawScreen, just blit prepared bitmaps to screen, don't render on the fly
+> have bitmaps for each card prepared in assets
+* controls - play the card
+> animation, card movements

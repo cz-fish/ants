@@ -16,11 +16,11 @@ class Window:
 
         self.surface = pygame.display.set_mode((SCR_WIDTH, SCR_HEIGHT), 0, 32)
         pygame.display.set_caption('Ants')
-        self.painter = Painter(self.surface)
+        self.painter = Painter(self.surface, self.game)
 
     def playGame(self):
         while not self.checkEvents():
-            self.painter.drawScreen(self.players, self.game)
+            self.painter.drawScreen(self.players)
             pygame.display.update()
             GAME_CLOCK.tick(FPS)
 

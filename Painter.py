@@ -1,17 +1,20 @@
 import pygame
-import pygame.image
-import Cards
 from math import pi
-import os
+import Cards
+from Bitmaps import Bitmaps
+from Sprites import Sprites
 
 # TODO: unite colors of resources:
 #   school/brick - red
 #   soldier/arms - green
 #   mages/crystals - blue
 
+# TODO: perhaps don't draw anything at all if the scene is completely the same as previous frame
+
 class Painter:
-    def __init__(self, surface):
+    def __init__(self, surface, game):
         self.surface = surface
+        self.game = game
         self.STATS_WIDTH = 168
         self.STATS_HEIGHT = 250
         self.CARD_WIDTH = 100
@@ -19,24 +22,11 @@ class Painter:
 
         self.font = pygame.font.SysFont(None, 20)
         
-        self.blindCard = []
+        self.bmp = Bitmaps()
+        self.sprites = Sprites(self.bmp, self.game.cards, self.CARD_WIDTH, self.CARD_HEIGHT)
 
-        self.loadBitmaps()
 
-    def loadBitmaps(self):
-        self.bmp = {}
-        ext = '.png'
-        for v in ['brick', 'arm', 'crystal', 'architect', 'soldier', 'mage']:
-            self.bmp['rsrc_' + v] = pygame.image.load(os.path.join('data', 'rsrc_' + v + ext))
-            self.bmp['rsrc_' + v + '_sm'] = pygame.image.load(os.path.join('data', 'rsrc_' + v + '_sm' + ext))
-        for v in ['attack', 'castle_attack', 'wall_attack', 'curse', 'transfer']:
-            self.bmp['action_' + v] = pygame.image.load(os.path.join('data', 'action_' + v + ext))
-        for v in ['castle', 'wall']:
-            self.bmp['stats_' + v] = pygame.image.load(os.path.join('data', 'stats_' + v + ext))
-        for v in ['castle', 'wall', 'transfer']:
-            self.bmp['action_' + v + '_sm'] = pygame.image.load(os.path.join('data', 'action_' + v + '_sm' + ext))
-
-    def drawScreen(self, players, game):
+    def drawScreen(self, players):
         """Draws the entire screen"""
         self.drawBackground()
         self.drawStats(players[0], True)
@@ -46,9 +36,8 @@ class Painter:
         hand = players[0].cards
         enabled = players[0].playable
         blind = False
-        deck = self.blindCard
 
-        self.drawCards([(hand[i], enabled[i]) for i in range(len(hand))], blind, deck)
+        self.drawCards([(hand[i], enabled[i]) for i in range(len(hand))], blind)
 
     def drawBackground(self):
         """Draws the window background and controls (dispose button)"""
@@ -108,29 +97,26 @@ class Painter:
 
         self.surface.blit(base, (x, 0))
 
-    def drawSingleCard(self, lefttop, card, enabled):
-        """Draws a single card
-           lefttop - tuple of (x,y) coordinates of the topleft corner of the card
-           card - card information (TBD)
-           enabled - if false, the card is drawn as grayscale only"""
-        cardSurf = self.createCard(card, enabled, False)
-        self.surface.blit(cardSurf, lefttop)
-
-    def drawCards(self, hand, blind, deck):
+    def drawCards(self, hand, blind):
         """Draws all cards on the screen - i.e. player's hand (blind in case it's AI move) and the deck card
            hand - list of cards on player's hand; may be empty if blind is set
-           blind - if true, the blind hand will be drawn (i.e. only backs of the cards, so that the player doesn't see AI player's hand)
-           deck - card at the top of the deck (with enabled/disabled flag)"""
+           blind - if true, the blind hand will be drawn (i.e. only backs of the cards, so that the player doesn't see AI player's hand)"""
         #self.drawSingleCard(
         #    ((self.surface.get_width()-self.CARD_WIDTH)/2, 0),
         #    deck[0], deck[1])
 
         for i in range(8):
             lefttop = (i * self.CARD_WIDTH, self.surface.get_height()-self.CARD_HEIGHT)
+            card = hand[i][0]
+            enabled = hand[i][1]
             if blind:
-                self.surface.blit(self.createCard([], True, True), lefttop)
+                sprite = self.sprites["card_blind"]
             else:
-                self.drawSingleCard(lefttop, hand[i][0], hand[i][1])
+                if enabled:
+                    sprite = self.sprites["card_e_" + card[Cards.C_NAME]]
+                else:
+                    sprite = self.sprites["card_d_" + card[Cards.C_NAME]]
+            self.surface.blit(sprite, lefttop)
 
     def drawAnthills(self, castleP1, wallP1, castleP2, wallP2):
         """Draws both castles and walls
@@ -139,72 +125,5 @@ class Painter:
            castleP2 - height of P2's castle
            wallP2 - height of P2's wall"""
         pass
-
-    def createCard(self, cardSpec, enabled, blind):
-        if blind:
-            if not self.blindCard:
-                self.blindCard = self.createBlankCard((30,30,90))
-            return self.blindCard
-
-        card = self.createBlankCard((255,255,255))
-
-        #TODO: translate card name
-        text = self.font.render(cardSpec[Cards.C_NAME], 1, (0,0,0))
-        card.blit(text, (3, 3))
-        left = 5
-        for i in [0, 1, 2]:
-            if cardSpec[Cards.C_COST][i] != 0:
-                card.blit(self.bmp['rsrc_' + ['brick', 'arm', 'crystal'][i] + '_sm'], (left, 18))
-                text = self.font.render(str(cardSpec[Cards.C_COST][i]), 1, (0,0,0))
-                card.blit(text, (left + 24, 22))
-                left += 35
-
-        pygame.draw.line(card, (0,0,0), (5, 46), (self.CARD_WIDTH-5, 46))
-
-        top = 50
-        # TODO: special case: curse
-
-        for i in [0, 1, 2, 3, 4, 5]:
-            left = 5
-            # FIXME: review the adding of '+' signs. Make sure that we never generate '+-'
-            if cardSpec[Cards.C_GAIN][i] != 0 or cardSpec[Cards.C_LOSE][i] != 0:
-                card.blit(self.bmp['rsrc_' + ['brick', 'arm', 'crystal', 'architect', 'soldier', 'mage'][i] + '_sm'], (left, top))
-                if cardSpec[Cards.C_GAIN][i] != 0 and cardSpec[Cards.C_LOSE][i] != 0:
-                    # this is a resource transfer
-                    text = self.font.render(str(-cardSpec[Cards.C_LOSE][i]), 1, (0,0,0))
-                    card.blit(text, (left + 24, top + 4))
-                    left += 35
-                    card.blit(self.bmp['action_transfer_sm'], (left, top))
-                    text = self.font.render('+' + str(cardSpec[Cards.C_GAIN][i]), 1, (0,0,0))
-                    card.blit(text, (left + 24, top + 4))
-                    left += 35
-                elif cardSpec[Cards.C_GAIN][i] != 0:
-                    # plain positive effect
-                    text = self.font.render('+' + str(cardSpec[Cards.C_GAIN][i]), 1, (0,0,0))
-                    card.blit(text, (left + 24, top + 4))
-                    left += 35
-                else:
-                    # plain negative effect
-                    text = self.font.render(str(-cardSpec[Cards.C_LOSE][i]), 1, (0,0,0))
-                    card.blit(text, (left + 24, top + 4))
-                    left += 35
-                top += 30
-
-        # TODO: castle/wall and attack in a similar fashion
-
-        if not enabled:
-            overlay = pygame.Surface((self.CARD_WIDTH, self.CARD_HEIGHT))
-            overlay.fill((25,25,25))
-            pygame.draw.ellipse(overlay, (0,0,0), (-120,-100,240,200), 0)
-            #card.blit(overlay, (0,0))
-            card.blit(overlay, (0,0), special_flags = pygame.BLEND_SUB)
-
-        return card
-
-    def createBlankCard(self, fillColor):
-        card = pygame.Surface((self.CARD_WIDTH, self.CARD_HEIGHT))
-        card.fill(fillColor)
-        pygame.draw.rect(card, (0,0,0), pygame.Rect(0,0,self.CARD_WIDTH,self.CARD_HEIGHT), 1)
-        return card
 
 
